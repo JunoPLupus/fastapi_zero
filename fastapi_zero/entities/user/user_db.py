@@ -1,4 +1,4 @@
-from fastapi_zero.entities import User
+from fastapi_zero.entities.user.user import User
 
 
 class UserDB(User):
