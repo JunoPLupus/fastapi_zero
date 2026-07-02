@@ -1,16 +1,12 @@
 import pytest
-from fastapi.testclient import TestClient
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_404_NOT_FOUND
 
-from fastapi_zero.app import app
 from tests.mothers.user_mother import UserMockFactory, UserPublicMockFactory
+
+pytestmark = pytest.mark.unit
 
 
 # region fixtures
-@pytest.fixture(scope='class')
-def client():
-    return TestClient(app)  # Arrange
-
 
 @pytest.fixture
 def user_mock():
