@@ -18,7 +18,7 @@ def test_root_deve_retornar_ola_mundo(client):
     assert response.json() == {'message': 'Olá mundo!'}
 
 
-def test_create_user_deve_retornar_user_public(client):
+def test_create_user_deve_cadastrar_usuario(client):
     # Act
     response = client.post(
         '/users/',
@@ -51,6 +51,25 @@ def test_read_users_deve_retornar_usuarios(client):
             }
         ]
     }
+
+
+def test_read_one_user_deve_retornar_usuario(client):
+    # Act
+    response = client.get('/users/1')
+    # Assert
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {
+        'id': 1,
+        'username': 'testuser',
+        'email': 'test.user@gmail.com'
+    }
+
+
+def test_read_one_user_deve_lancar_exception_quando_nao_encontrado(client):
+    # Act
+    response = client.get('/users/4')
+    # Assert
+    assert response.status_code == HTTP_404_NOT_FOUND
 
 
 def test_update_user_deve_atualizar_usuario(client):
@@ -91,3 +110,10 @@ def test_delete_user_deve_deletar_usuario(client):
     assert response.json() == {
         'message': 'User deleted'
     }
+
+
+def test_delete_user_deve_lancar_exception_quando_nao_encontrado(client):
+    # Act
+    response = client.delete('/users/4')
+    # Assert
+    assert response.status_code == HTTP_404_NOT_FOUND
