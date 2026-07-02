@@ -23,7 +23,8 @@ dev = [
     "pytest-cov (>=7.1.0,<8.0.0)",
     "taskipy (>=1.14.1,<2.0.0)",
     "typos (>=1.48.0,<2.0.0)",
-    "pytest-random-order (>=1.2.0,<2.0.0)"
+    "pytest-random-order (>=1.2.0,<2.0.0)",
+    "factory-boy (>=3.3.3,<4.0.0)"
 ]
 
 [tool.ruff]
@@ -37,6 +38,9 @@ select = ['I', 'F', 'E', 'W', 'PL', 'PT']
 [tool.ruff.format]
 preview = true
 quote-style = 'single'
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["PLR6301"]
 
 [tool.pytest]
 pythonpath = ['.']

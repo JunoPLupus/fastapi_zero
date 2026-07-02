@@ -3,117 +3,111 @@ from fastapi.testclient import TestClient
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_404_NOT_FOUND
 
 from fastapi_zero.app import app
+from tests.mothers.user_mother import UserMockFactory, UserPublicMockFactory
 
 
-@pytest.fixture
+# region fixtures
+@pytest.fixture(scope='class')
 def client():
     return TestClient(app)  # Arrange
 
 
-def test_root_deve_retornar_ola_mundo(client):
-    # Act
-    response = client.get('/')
-    # Assert
-    assert response.status_code == HTTP_200_OK
-    assert response.json() == {'message': 'Olá mundo!'}
+@pytest.fixture
+def user_mock():
+    return UserMockFactory.create()  # Arrange
 
 
-def test_create_user_deve_cadastrar_usuario(client):
-    # Act
-    response = client.post(
-        '/users/',
-        json={
-            'username': 'testuser',
-            'email': 'test.user@gmail.com',
-            'password': 'secret',
+@pytest.fixture
+def user_public_mock():
+    return UserPublicMockFactory.create()  # Arrange
+
+
+# endregion
+
+
+class TestRoot:
+    def test_deve_retornar_ola_mundo(self, client):
+        # Act
+        response = client.get('/')
+        # Assert
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == {'message': 'Olá mundo!'}
+
+
+class TestCreateUser:
+    def test_deve_cadastrar_usuario(self, client, user_mock, user_public_mock):
+        # Act
+        response = client.post('/users/', json=user_mock.model_dump())
+        # Assert
+        assert response.status_code == HTTP_201_CREATED
+        assert response.json() == user_public_mock.model_dump()
+
+
+class TestReadUsers:
+    def test_deve_retornar_usuarios(self, client, user_mock, user_public_mock):
+        # Arrange
+        client.post('/users/', json=user_mock.model_dump())
+        user_public_mock_2 = UserPublicMockFactory.create(id=2)
+        # Act
+        response = client.get('/users/')
+        # Assert
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == {
+            'users': [
+                user_public_mock.model_dump(),
+                user_public_mock_2.model_dump(),
+            ]
         }
-    )
-    # Assert
-    assert response.status_code == HTTP_201_CREATED
-    assert response.json() == {
-        'id': 1,
-        'username': 'testuser',
-        'email': 'test.user@gmail.com',
-    }
 
 
-def test_read_users_deve_retornar_usuarios(client):
-    # Act
-    response = client.get('/users/')
-    # Assert
-    assert response.status_code == HTTP_200_OK
-    assert response.json() == {
-        'users': [
-            {
-                'id': 1,
-                'username': 'testuser',
-                'email': 'test.user@gmail.com'
-            }
-        ]
-    }
+class TestReadOneUser:
+    def test_deve_retornar_usuario(self, client, user_mock, user_public_mock):
+        # Arrange
+        client.post('/users/', json=user_mock.model_dump())
+        # Act
+        response = client.get('/users/1')
+        # Assert
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == user_public_mock.model_dump()
+
+    def test_deve_lancar_exception_quando_nao_encontrado(self, client):
+        # Act
+        response = client.get('/users/4')
+        # Assert
+        assert response.status_code == HTTP_404_NOT_FOUND
 
 
-def test_read_one_user_deve_retornar_usuario(client):
-    # Act
-    response = client.get('/users/1')
-    # Assert
-    assert response.status_code == HTTP_200_OK
-    assert response.json() == {
-        'id': 1,
-        'username': 'testuser',
-        'email': 'test.user@gmail.com'
-    }
+class TestUpdateUser:
+    def test_deve_atualizar_usuario(self, client, user_mock, user_public_mock):
+        # Arrange
+        client.post('/users/', json=user_mock.model_dump())
+        # Act
+        response = client.put('/users/1', json=user_mock.model_dump())
+        # Assert
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == user_public_mock.model_dump()
+
+    def test_deve_lancar_exception_quando_nao_encontrado(
+        self, client, user_mock
+    ):
+        # Act
+        response = client.put('/users/404', json=user_mock.model_dump())
+        # Assert
+        assert response.status_code == HTTP_404_NOT_FOUND
 
 
-def test_read_one_user_deve_lancar_exception_quando_nao_encontrado(client):
-    # Act
-    response = client.get('/users/4')
-    # Assert
-    assert response.status_code == HTTP_404_NOT_FOUND
+class TestDeleteUser:
+    def test_deve_deletar_usuario(self, client, user_mock):
+        # Arrange
+        client.post('/users/', json=user_mock.model_dump())
+        # Act
+        response = client.delete('/users/1')
+        # Assert
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == {'message': 'User deleted'}
 
-
-def test_update_user_deve_atualizar_usuario(client):
-    # Act
-    response = client.put(
-        '/users/1',
-        json={
-            'username': 'bob',
-            'email': 'bob@example.com',
-            'password': 'mynewpassword'
-        }
-    )
-    # Assert
-    assert response.status_code == HTTP_200_OK
-    assert response.json() == {
-        'id': 1,
-        'username': 'bob',
-        'email': 'bob@example.com'
-    }
-
-
-def test_update_user_deve_lancar_exception_quando_nao_encontrado(client):
-    # Act
-    response = client.put('/users/4', json={
-        'username': 'bob 2',
-        'email': 'bob@gmail.com',
-        'password': 'newpassword'
-    })
-    # Assert
-    assert response.status_code == HTTP_404_NOT_FOUND
-
-
-def test_delete_user_deve_deletar_usuario(client):
-    # Act
-    response = client.delete('/users/1')
-    # Assert
-    assert response.status_code == HTTP_200_OK
-    assert response.json() == {
-        'message': 'User deleted'
-    }
-
-
-def test_delete_user_deve_lancar_exception_quando_nao_encontrado(client):
-    # Act
-    response = client.delete('/users/4')
-    # Assert
-    assert response.status_code == HTTP_404_NOT_FOUND
+    def test_deve_lancar_exception_quando_nao_encontrado(self, client):
+        # Act
+        response = client.delete('/users/404')
+        # Assert
+        assert response.status_code == HTTP_404_NOT_FOUND
