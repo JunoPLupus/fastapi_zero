@@ -1,6 +1,6 @@
 import factory
 
-from fastapi_zero.models import User, UserPublic
+from fastapi_zero.entities import User, UserPublic
 
 user_username = 'bob'
 user_email = 'bob@gmail.com'

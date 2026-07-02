@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_404_NOT_FOUND
 
-from fastapi_zero.models import Message, User, UserDB, UserList, UserPublic
+from fastapi_zero.entities import Message, User, UserDB, UserList, UserPublic
 
 app = FastAPI()
 database = []
