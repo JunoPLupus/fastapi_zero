@@ -1,7 +1,16 @@
-from fastapi import FastAPI, HTTPException
-from starlette.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_404_NOT_FOUND
+from fastapi import Depends, FastAPI, HTTPException
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from starlette.status import (
+    HTTP_200_OK,
+    HTTP_201_CREATED,
+    HTTP_404_NOT_FOUND,
+    HTTP_409_CONFLICT,
+)
 
+from fastapi_zero.database import get_session
 from fastapi_zero.entities import Message, User, UserDB, UserList, UserPublic
+from fastapi_zero.models.user.user_schema import UserSchema
 
 app = FastAPI()
 database = []
@@ -18,12 +27,30 @@ def read_users():
 
 
 @app.post('/users/', status_code=HTTP_201_CREATED, response_model=UserPublic)
-def create_user(user: User):
-    user_with_id = UserDB(**user.model_dump(), id=len(database) + 1)
+def create_user(user: User, session: Session = Depends(get_session)):
+    db_user = session.scalar(
+        select(UserSchema).where(
+            (UserSchema.username == user.username)
+            | (UserSchema.email == user.email)
+        )
+    )
 
-    database.append(user_with_id)
+    if db_user:
+        if db_user.username == user.username:
+            raise HTTPException(
+                status_code=HTTP_409_CONFLICT, detail='Username already exists'
+            )
+        elif db_user.email == user.email:
+            raise HTTPException(
+                status_code=HTTP_409_CONFLICT, detail='Email already exists'
+            )
 
-    return user_with_id
+    db_user = UserSchema(**user.model_dump())
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+
+    return db_user
 
 
 @app.get(
