@@ -8,6 +8,7 @@ pytestmark = pytest.mark.unit
 
 # region fixtures
 
+
 @pytest.fixture
 def user_mock():
     return UserMockFactory.create()  # Arrange
